@@ -28,7 +28,7 @@ jobs:
       - name: 'Resolve Project Dependencies Using Dotnet'
         shell: pwsh
         run: |
-          pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/Functionapp1'
+          pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/shoppingFucntion'
           dotnet build --configuration Release --output ./output
           popd
 
@@ -38,5 +38,5 @@ jobs:
         with:
           app-name: 'shoppingFunctionApp'
           slot-name: 'Production'
-          package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/Functionapp1/output'
+          package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/shoppingFucntion/output'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_C62786544F204400B8E9FA6A661B175A }}
