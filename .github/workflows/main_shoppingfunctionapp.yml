@@ -11,7 +11,7 @@ on:
 
 env:
   AZURE_FUNCTIONAPP_PACKAGE_PATH: '.' # set this to the path to your web app project, defaults to the repository root
-  DOTNET_VERSION: '3.1.301' # set this to the dotnet version to use
+  DOTNET_VERSION: '6.0.x' # set this to the dotnet version to use
 
 jobs:
   build-and-deploy:
@@ -28,7 +28,7 @@ jobs:
       - name: 'Resolve Project Dependencies Using Dotnet'
         shell: pwsh
         run: |
-          pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}shoppingFucntion/'
+          pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
           dotnet build --configuration Release --output ./output
           popd
 
@@ -38,5 +38,5 @@ jobs:
         with:
           app-name: 'shoppingFunctionApp'
           slot-name: 'Production'
-          package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/shoppingFucntion/output'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_A11BF4F7C03B466B959A2BE079D31987 }}
+          package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output'
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_B184A88311234E9EBCBFF1123EA222CE }}
