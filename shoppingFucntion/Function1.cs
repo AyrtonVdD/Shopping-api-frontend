@@ -45,4 +45,35 @@ namespace shoppingFucntion
             }
         }
     }
+
+    //[FunctionName("GetAllCategories")]
+    //public static async Task<IActionResult> GetAllCategories(
+    //[HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "Categories")] HttpRequest req,
+    //ILogger log)
+    //{
+    //    try
+    //    {
+    //        string connectionString = Environment.GetEnvironmentVariable("CosmosConnectionString");
+    //        CosmosClient cosmosClient = new CosmosClient(connectionString);
+    //        Database database = cosmosClient.GetDatabase("Shopping-list");
+    //        Container container = database.GetContainer("Shops");
+
+    //        List<Shop> allShops = new List<Shop>();
+
+    //        QueryDefinition query = new QueryDefinition("SELECT * FROM Shops");
+    //        FeedIterator<Shop> iterator = container.GetItemQueryIterator<Shop>(query);
+    //        while (iterator.HasMoreResults)
+    //        {
+    //            FeedResponse<Shop> response = await iterator.ReadNextAsync();
+    //            allShops.AddRange(response);
+    //        }
+
+    //        return new OkObjectResult(allShops);
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        throw ex;
+    //    }
+    //}
+
 }
