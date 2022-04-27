@@ -13,5 +13,7 @@ namespace frituurFunctions.Models
         [JsonProperty("name")]
         public string name { get; set; }
 
+        [JsonProperty("img")]
+        public string img { get; set; }
     }
 }
