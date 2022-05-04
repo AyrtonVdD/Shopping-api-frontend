@@ -10,173 +10,141 @@ using Newtonsoft.Json;
 using Microsoft.Azure.Cosmos;
 using shoppingFucntion.Models;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 
 namespace shoppingFucntion
 {
-    public static class ReceiveProductsInfo
+    public class ReceiveProductsInfo
     {
-        [FunctionName("GetAllShops")]
-        public static async Task<IActionResult> GetAllShops(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "shops")] HttpRequest req,
-            ILogger log)
+
+        private static string CONNECTIONSTRING = Environment.GetEnvironmentVariable("Connectionstring");
+
+        [FunctionName("GetShops")]
+        public async Task<IActionResult> GetShops(
+                [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/Shops")] HttpRequest req,
+                ILogger log)
         {
             try
             {
-                string connectionString = Environment.GetEnvironmentVariable("CosmosConnectionString");
-                CosmosClient cosmosClient = new CosmosClient(connectionString);
-                Database database = cosmosClient.GetDatabase("Shopping-list");
-                Container container = database.GetContainer("Shops");
+                List<Shop> shops = new List<Shop>();
 
-                List<Shop> allShops = new List<Shop>();
-
-                var json = await new StreamReader(req.Body).ReadToEndAsync();
-                allShops = JsonConvert.DeserializeObject<List<Shop>>(json);
-
-                QueryDefinition query = new QueryDefinition("SELECT * FROM Shops");
-                FeedIterator<Shop> iterator = container.GetItemQueryIterator<Shop>(query);
-                while (iterator.HasMoreResults)
+                using (SqlConnection sqlConnection = new SqlConnection(CONNECTIONSTRING))
                 {
-                    FeedResponse<Shop> response = await iterator.ReadNextAsync();
-                    allShops.AddRange(response);
-                }
+                    await sqlConnection.OpenAsync();
+                    using (SqlCommand sqlCommand = new SqlCommand())
+                    {
+                        sqlCommand.Connection = sqlConnection;
+                        sqlCommand.CommandText = "SELECT * FROM Shops";
 
-                return new OkObjectResult(allShops);
+                        var reader = await sqlCommand.ExecuteReaderAsync();
+
+                        while (await reader.ReadAsync())
+                        {
+                            Shop shop = new Shop();
+
+                            shop.Id = int.Parse(reader["Id"].ToString());
+                            shop.Name = reader["Name"].ToString();
+                            shop.Img = reader["Img"].ToString();
+
+                            shops.Add(shop);
+                        }
+                    }
+                }
+                return new OkObjectResult(shops);
             }
             catch (Exception ex)
             {
-                throw ex;
+                log.LogError(ex.ToString());
+                return new StatusCodeResult(500);
             }
         }
 
-        [FunctionName("GetAllCategorieen")]
-        public static async Task<IActionResult> GetAllCategorieen(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "categorieen")] HttpRequest req,
-            ILogger log)
+
+        [FunctionName("GetCategories")]
+        public async Task<IActionResult> GetCategoyByShopId(
+                [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/Categories/{shopId}")] HttpRequest req,
+                int shopId, 
+                ILogger log)
         {
             try
             {
-                string connectionString = Environment.GetEnvironmentVariable("CosmosConnectionString");
-                CosmosClient cosmosClient = new CosmosClient(connectionString);
-                Database database = cosmosClient.GetDatabase("Shopping-list");
-                Container container = database.GetContainer("Shops");
+                List<Category> categories = new List<Category>();
 
-                List<Category> allCategorys = new List<Category>();
-
-                //string requestBody = new StreamReader(req.Body).ReadToEndAsync();
-                //JsonResponseProducten data = JsonConvert.DeserializeObject<JsonResponseProducten>(requestBody);
-                //var Root = data.ProdId;
-
-                QueryDefinition query = new QueryDefinition("SELECT * FROM c.category");
-                FeedIterator<Category> iterator = container.GetItemQueryIterator<Category>(query);
-                while (iterator.HasMoreResults)
+                using (SqlConnection sqlConnection = new SqlConnection(CONNECTIONSTRING))
                 {
-                    FeedResponse<Category> response = await iterator.ReadNextAsync();
-                    allCategorys.AddRange(response);
-                }
+                    await sqlConnection.OpenAsync();
+                    using (SqlCommand sqlCommand = new SqlCommand())
+                    {
+                        sqlCommand.Connection = sqlConnection;
+                        sqlCommand.CommandText = "SELECT * FROM Shop_category SC INNER JOIN Shops S ON S.id = SC.shopId INNER JOIN Categorys C ON SC.categoryId = C.catId WHERE S.id = @shopId";
+                        sqlCommand.Parameters.AddWithValue("@shopId", shopId);
 
-                return new OkObjectResult(allCategorys);
+                        var reader = await sqlCommand.ExecuteReaderAsync();
+
+                        while (await reader.ReadAsync())
+                        {
+                            Category category = new Category();
+
+                            category.Id = int.Parse(reader["catId"].ToString());
+                            category.Name = reader["catName"].ToString();
+                            category.Img = reader["catImg"].ToString();
+
+                            categories.Add(category);
+                        }
+                    }
+                }
+                return new OkObjectResult(categories);
             }
             catch (Exception ex)
             {
-                throw ex;
+                log.LogError(ex.ToString());
+                return new StatusCodeResult(500);
             }
         }
 
-        [FunctionName("GetAllProdcuten")]
-        public static async Task<IActionResult> GetAllProducten(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "producten")] HttpRequest req,
+        [FunctionName("GetProducten")]
+        public async Task<IActionResult> GetProductsByCategoryId(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/Products/{catId}")] HttpRequest req,
+        int catId,
         ILogger log)
         {
             try
             {
-                string connectionString = Environment.GetEnvironmentVariable("CosmosConnectionString");
-                CosmosClient cosmosClient = new CosmosClient(connectionString);
-                Database database = cosmosClient.GetDatabase("Shopping-list");
-                Container container = database.GetContainer("Shops");
+                List<Producten> producten = new List<Producten>();
 
-                List<Producten> allProducs = new List<Producten>();
-
-
-                QueryDefinition query = new QueryDefinition("SELECT c.producten FROM c in p.category");
-                FeedIterator<Producten> iterator = container.GetItemQueryIterator<Producten>(query);
-                while (iterator.HasMoreResults)
+                using (SqlConnection sqlConnection = new SqlConnection(CONNECTIONSTRING))
                 {
-                    FeedResponse<Producten> response = await iterator.ReadNextAsync();
-                    allProducs.AddRange(response);
-                }
+                    await sqlConnection.OpenAsync();
+                    using (SqlCommand sqlCommand = new SqlCommand())
+                    {
+                        sqlCommand.Connection = sqlConnection;
+                        sqlCommand.CommandText = "SELECT * FROM Category_product CP INNER JOIN Categorys C ON C.catId = CP.categoryId INNER JOIN Producten P ON CP.productId = P.prodId WHERE C.catId = @catId";
+                        sqlCommand.Parameters.AddWithValue("@catId", catId);
 
-                return new OkObjectResult(allProducs);
+                        var reader = await sqlCommand.ExecuteReaderAsync();
+
+                        while (await reader.ReadAsync())
+                        {
+                            Producten product = new Producten();
+
+                            product.Id = int.Parse(reader["prodId"].ToString());
+                            product.Name = reader["prodName"].ToString();
+                            product.Img = reader["prodImg"].ToString();
+                            product.Count = int.Parse(reader["Count"].ToString());
+
+                            producten.Add(product);
+                        }
+                    }
+                }
+                return new OkObjectResult(producten);
             }
             catch (Exception ex)
             {
-                throw ex;
+                log.LogError(ex.ToString());
+                return new StatusCodeResult(500);
             }
         }
-
-        [FunctionName("GetAllCategorieenByShopId")]
-        public static async Task<IActionResult> GetAllCategorienByShopId(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "catergory/{shopId}")] HttpRequest req,
-        string shopId,
-        ILogger log)
-        {
-            try
-            {
-                string connectionString = Environment.GetEnvironmentVariable("CosmosConnectionString");
-                CosmosClient cosmosClient = new CosmosClient(connectionString);
-                Database database = cosmosClient.GetDatabase("Shopping-list");
-                Container container = database.GetContainer("Shops");
-
-                List<Category> allCategorienByShopId = new List<Category>();
-
-                QueryDefinition query = new QueryDefinition("SELECT c.name, c.category FROM c where c.id = @shopId");
-                query.WithParameter("@shopId", shopId);
-                FeedIterator<Category> iterator = container.GetItemQueryIterator<Category>(query);
-
-                while (iterator.HasMoreResults)
-                {
-                    FeedResponse<Category> response = await iterator.ReadNextAsync();
-                    allCategorienByShopId.AddRange(response);
-                }
-
-                return new OkObjectResult(allCategorienByShopId);
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        } 
-        
 
     }
-
-    //[FunctionName("GetAllCategories")]
-    //public static async Task<IActionResult> GetAllCategories(
-    //[HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "Categories")] HttpRequest req,
-    //ILogger log)
-    //{
-    //    try
-    //    {
-    //        string connectionString = Environment.GetEnvironmentVariable("CosmosConnectionString");
-    //        CosmosClient cosmosClient = new CosmosClient(connectionString);
-    //        Database database = cosmosClient.GetDatabase("Shopping-list");
-    //        Container container = database.GetContainer("Shops");
-
-    //        List<Shop> allShops = new List<Shop>();
-
-    //        QueryDefinition query = new QueryDefinition("SELECT * FROM Categorieen");
-    //        FeedIterator<Shop> iterator = container.GetItemQueryIterator<Shop>(query);
-    //        while (iterator.HasMoreResults)
-    //        {
-    //            FeedResponse<Shop> response = await iterator.ReadNextAsync();
-    //            allShops.AddRange(response);
-    //        }
-
-    //        return new OkObjectResult(allShops);
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        throw ex;
-    //    }
-    //}
 
 }

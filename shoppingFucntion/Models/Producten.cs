@@ -8,11 +8,11 @@ namespace shoppingFucntion.Models
     public class Producten
     {
         [JsonProperty("prodId")]
-        public string ProdId { get; set; }
+        public int Id { get; set; }
         [JsonProperty("prodName")]
-        public string ProdName { get; set; }
+        public string Name { get; set; }
         [JsonProperty("prodImg")]
-        public string ProdImg { get; set; }
+        public string Img { get; set; }
         
         [JsonProperty("count")]
         public int Count { get; set; }

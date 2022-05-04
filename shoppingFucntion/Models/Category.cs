@@ -8,32 +8,13 @@ namespace shoppingFucntion.Models
     public class Category
     {
         [JsonProperty("catId")]
-        public string CatId { get; set; }
+        public int Id { get; set; }
 
         [JsonProperty("catName")]
-        public string CatName { get; set; }
+        public string Name { get; set; }
 
         [JsonProperty("catImg")]
-        public string CatImg { get; set; }
+        public string Img { get; set; }
 
-        [JsonProperty("producten")]
-        public Producten producten { get; set; }
-
-        //public class JsonResponseProducten
-        //{
-        //    public List<Constant> producten { get; set; }
-        //}
-
-        //public class Constant
-        //{
-        //    [JsonProperty("prodId")]
-        //    public string prodId { get; set; }
-
-        //    [JsonProperty("prodName")]
-        //    public string prodName { get; set; }
-
-        //    [JsonProperty("prodImg")]
-        //    public string prodImg { get; set; }
-        //}
     }
 }
