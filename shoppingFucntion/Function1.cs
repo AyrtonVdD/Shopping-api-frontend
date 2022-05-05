@@ -145,6 +145,127 @@ namespace shoppingFucntion
             }
         }
 
+        [FunctionName("GetShoppingCart")]
+        public async Task<IActionResult> GetProductByProdId(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/ShoppingCart")] HttpRequest req,
+        ILogger log)
+        {
+            try
+            {
+                List<ShoppingCart> shoppingCarts = new List<ShoppingCart>();
+
+                using (SqlConnection sqlConnection = new SqlConnection(CONNECTIONSTRING))
+                {
+                    await sqlConnection.OpenAsync();
+                    using (SqlCommand sqlCommand = new SqlCommand())
+                    {
+                        sqlCommand.Connection = sqlConnection;
+                        sqlCommand.CommandText = "SELECT sc.shopCartId, s.id, s.name, p.prodId, p.prodName, p.prodImg, sc.count FROM ShoppingCart AS sc INNER JOIN Shops AS s ON sc.shopId = s.id INNER JOIN Producten AS p ON sc.prodId = p.prodId";
+
+                        var reader = await sqlCommand.ExecuteReaderAsync();
+
+                        while (await reader.ReadAsync())
+                        {
+                            ShoppingCart shoppingCart = new ShoppingCart();
+
+                            shoppingCart.ShoppingCartId = int.Parse(reader["shopCartId"].ToString());
+                            shoppingCart.ShopId = int.Parse(reader["id"].ToString());
+                            shoppingCart.ProdId = int.Parse(reader["prodId"].ToString());
+                            shoppingCart.Count = int.Parse(reader["Count"].ToString());
+
+                            shoppingCarts.Add(shoppingCart);
+                        }
+                    }
+                }
+                return new OkObjectResult(shoppingCarts);
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex.ToString());
+                return new StatusCodeResult(500);
+            }
+        }
+
+        [FunctionName("GetProduct")]
+        public async Task<IActionResult> GetProductInCartByProdId(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/Product/{prodId}")] HttpRequest req,
+        int prodId,
+        ILogger log)
+        {
+            try
+            {
+                List<Producten> producten = new List<Producten>();
+
+                using (SqlConnection sqlConnection = new SqlConnection(CONNECTIONSTRING))
+                {
+                    await sqlConnection.OpenAsync();
+                    using (SqlCommand sqlCommand = new SqlCommand())
+                    {
+                        sqlCommand.Connection = sqlConnection;
+                        sqlCommand.CommandText = "SELECT * FROM Producten WHERE prodId= @prodId";
+                        sqlCommand.Parameters.AddWithValue("@prodId", prodId);
+
+                        var reader = await sqlCommand.ExecuteReaderAsync();
+
+                        while (await reader.ReadAsync())
+                        {
+                            Producten product = new Producten();
+
+                            product.Id = int.Parse(reader["prodId"].ToString());
+                            product.Name = reader["prodName"].ToString();
+                            product.Img = reader["prodImg"].ToString();
+                            product.Count = int.Parse(reader["Count"].ToString());
+
+                            producten.Add(product);
+                        }
+                    }
+                }
+                return new OkObjectResult(producten);
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex.ToString());
+                return new StatusCodeResult(500);
+            }
+        }
+
+
+        [FunctionName("PostProduct")]
+        public async Task<IActionResult> PostCards(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "v1/Shoppingcart")] HttpRequest req,
+        ILogger log)
+        {
+            try
+            {
+                var json = await new StreamReader(req.Body).ReadToEndAsync();
+                var shoppingCart = JsonConvert.DeserializeObject<ShoppingCart>(json);
+                //var shop = JsonConvert.DeserializeObject<Shop>(json);
+
+                using (SqlConnection sqlConnection = new SqlConnection(CONNECTIONSTRING))
+
+                {
+                    await sqlConnection.OpenAsync();
+                    using (SqlCommand sqlCommand = new SqlCommand())
+                    {
+                        sqlCommand.Connection = sqlConnection;
+                        sqlCommand.CommandText = "INSERT INTO ShoppingCart VALUES(@shoppingCartId,@shopId,@prodId,@count)";
+                        sqlCommand.Parameters.AddWithValue("@shoppingCartId", shoppingCart.ShoppingCartId);
+                        sqlCommand.Parameters.AddWithValue("@shopId", shoppingCart.ShopId);
+                        sqlCommand.Parameters.AddWithValue("@prodId", shoppingCart.ProdId);
+                        sqlCommand.Parameters.AddWithValue("@count", shoppingCart.Count);
+
+                        await sqlCommand.ExecuteNonQueryAsync();
+                    }
+                }
+                return new OkObjectResult(shoppingCart);
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex.ToString());
+                return new StatusCodeResult(500);
+            }
+        }
+
     }
 
 }
