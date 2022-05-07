@@ -7,8 +7,8 @@ namespace shoppingFucntion.Models
 {
     public class ShoppingCart
     {
-        [JsonProperty("shoppingCartId")]
-        public int ShoppingCartId { get; set; }
+        [JsonProperty("shopCartId")]
+        public int ShopCartId { get; set; }
 
         [JsonProperty("shopId")]
         public int ShopId { get; set; }

@@ -168,7 +168,7 @@ namespace shoppingFucntion
                         {
                             ShoppingCart shoppingCart = new ShoppingCart();
 
-                            shoppingCart.ShoppingCartId = int.Parse(reader["shopCartId"].ToString());
+                            shoppingCart.ShopCartId = int.Parse(reader["shopCartId"].ToString());
                             shoppingCart.ShopId = int.Parse(reader["id"].ToString());
                             shoppingCart.ProdId = int.Parse(reader["prodId"].ToString());
                             shoppingCart.Count = int.Parse(reader["Count"].ToString());
@@ -229,6 +229,46 @@ namespace shoppingFucntion
             }
         }
 
+        [FunctionName("GetShopName")]
+        public async Task<IActionResult> GetShopInCartByShopId(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/Shop/{shopId}")] HttpRequest req,
+        int shopId,
+        ILogger log)
+        {
+            try
+            {
+                List<Shop> shops = new List<Shop>();
+
+                using (SqlConnection sqlConnection = new SqlConnection(CONNECTIONSTRING))
+                {
+                    await sqlConnection.OpenAsync();
+                    using (SqlCommand sqlCommand = new SqlCommand())
+                    {
+                        sqlCommand.Connection = sqlConnection;
+                        sqlCommand.CommandText = "SELECT name FROM Shops WHERE id= @shopId";
+                        sqlCommand.Parameters.AddWithValue("@shopId", shopId);
+
+                        var reader = await sqlCommand.ExecuteReaderAsync();
+
+                        while (await reader.ReadAsync())
+                        {
+                            Shop shop = new Shop();
+                            shop.Name = reader["name"].ToString();
+
+                            shops.Add(shop);
+                        }
+                    }
+                }
+                return new OkObjectResult(shops);
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex.ToString());
+                return new StatusCodeResult(500);
+            }
+        }
+
+
 
         [FunctionName("PostProduct")]
         public async Task<IActionResult> PostCards(
@@ -248,8 +288,7 @@ namespace shoppingFucntion
                     using (SqlCommand sqlCommand = new SqlCommand())
                     {
                         sqlCommand.Connection = sqlConnection;
-                        sqlCommand.CommandText = "INSERT INTO ShoppingCart VALUES(@shoppingCartId,@shopId,@prodId,@count)";
-                        sqlCommand.Parameters.AddWithValue("@shoppingCartId", shoppingCart.ShoppingCartId);
+                        sqlCommand.CommandText = "INSERT INTO ShoppingCart VALUES(@shopId,@prodId,@count)";
                         sqlCommand.Parameters.AddWithValue("@shopId", shoppingCart.ShopId);
                         sqlCommand.Parameters.AddWithValue("@prodId", shoppingCart.ProdId);
                         sqlCommand.Parameters.AddWithValue("@count", shoppingCart.Count);
@@ -258,6 +297,33 @@ namespace shoppingFucntion
                     }
                 }
                 return new OkObjectResult(shoppingCart);
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex.ToString());
+                return new StatusCodeResult(500);
+            }
+        }
+
+        [FunctionName("DelProdShoppingCart")]
+        public async Task<IActionResult> DelRegistration(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "DELETE", Route = "v1/delProduct/{id}")] HttpRequest req,
+        string id,
+        ILogger log)
+        {
+            try
+            {
+                using (SqlConnection sqlConnection = new SqlConnection(CONNECTIONSTRING))
+                {
+                    await sqlConnection.OpenAsync();
+                    using (SqlCommand sqlCommand = new SqlCommand())
+                    {
+                        sqlCommand.Connection = sqlConnection;
+                        sqlCommand.CommandText = "DELETE FROM ShoppingCart WHERE shopCartId=@id";
+                        sqlCommand.Parameters.AddWithValue("@id", id);
+                    }
+                }
+                return new OkObjectResult(id + " is gedeleted");
             }
             catch (Exception ex)
             {
