@@ -272,6 +272,50 @@ namespace shoppingFucntion
         }
 
 
+        [FunctionName("GetSelectedShoopingCartId")]
+        public async Task<IActionResult> GetShoppingCardwithShoppingCartId(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/shoppingcartItem/{shopCartId}")] HttpRequest req,
+        int shopCartId,
+        ILogger log)
+        {
+            try
+            {
+                List<ShoppingCart> shoppingCarts = new List<ShoppingCart>();
+
+                using (SqlConnection sqlConnection = new SqlConnection(CONNECTIONSTRING))
+                {
+                    await sqlConnection.OpenAsync();
+                    using (SqlCommand sqlCommand = new SqlCommand())
+                    {
+                        sqlCommand.Connection = sqlConnection;
+                        sqlCommand.CommandText = "SELECT * FROM ShoppingCart WHERE shopCartId= @shopCartId";
+                        sqlCommand.Parameters.AddWithValue("@shopCartId", shopCartId);
+
+                        var reader = await sqlCommand.ExecuteReaderAsync();
+
+                        while (await reader.ReadAsync())
+                        {
+                            ShoppingCart ShoppingCart = new ShoppingCart();
+
+                            ShoppingCart.ShopId = int.Parse(reader["shopId"].ToString());
+                            ShoppingCart.ShopName = reader["shopName"].ToString();
+                            ShoppingCart.ProdId = int.Parse(reader["prodId"].ToString());
+                            ShoppingCart.ProdName = reader["prodName"].ToString();
+                            ShoppingCart.ProdImg = reader["prodImg"].ToString();
+
+                            shoppingCarts.Add(ShoppingCart);
+                        }
+                    }
+                }
+                return new OkObjectResult(shoppingCarts);
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex.ToString());
+                return new StatusCodeResult(500);
+            }
+        }
+
 
         [FunctionName("PostProduct")]
         public async Task<IActionResult> PostCards(
