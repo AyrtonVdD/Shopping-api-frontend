@@ -272,7 +272,7 @@ namespace shoppingFucntion
         }
 
 
-        [FunctionName("GetSelectedShoopingCartId")]
+        [FunctionName("GetSelectedShopingCartId")]
         public async Task<IActionResult> GetShoppingCardwithShoppingCartId(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/shoppingcartItem/{shopCartId}")] HttpRequest req,
         int shopCartId,
@@ -302,6 +302,7 @@ namespace shoppingFucntion
                             ShoppingCart.ProdId = int.Parse(reader["prodId"].ToString());
                             ShoppingCart.ProdName = reader["prodName"].ToString();
                             ShoppingCart.ProdImg = reader["prodImg"].ToString();
+                            ShoppingCart.Count = int.Parse(reader["count"].ToString());
 
                             shoppingCarts.Add(ShoppingCart);
                         }
