@@ -313,8 +313,8 @@ namespace shoppingFucntion
 
         [FunctionName("DelProdShoppingCart")]
         public async Task<IActionResult> DelRegistration(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "DELETE", Route = "v1/delProduct/{shoppingCartId}")] HttpRequest req,
-        int shoppingCartId,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "DELETE", Route = "v1/delProduct/{shopCartId}")] HttpRequest req,
+        int shopCartId,
         ILogger log)
         {
             try
@@ -322,13 +322,53 @@ namespace shoppingFucntion
                 using (SqlConnection sqlConnection = new SqlConnection(CONNECTIONSTRING))
                 {
                     await sqlConnection.OpenAsync();
+                    //await sqlCommand.ExceteNonQuerryAsync()
                     using (SqlCommand sqlCommand = new SqlCommand())
                     {
                         sqlCommand.Connection = sqlConnection;
-                        sqlCommand.CommandText = "DELETE FROM ShoppingCart WHERE shopCartId='" + shoppingCartId + "''";
+                        sqlCommand.CommandText = "DELETE FROM ShoppingCart WHERE shopCartId=" + shopCartId;
+
+                        sqlCommand.ExecuteNonQuery();
+                    }
+
+                }
+                
+                return new OkObjectResult(shopCartId + " is gedeleted");
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex.ToString());
+                return new StatusCodeResult(500);
+            }
+        }
+
+        [FunctionName("UpdateCountOfShopingCart")]
+        public static async Task<IActionResult> UpdateAdmin(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "updateShoppingCardItem/{id}")] HttpRequest req,
+        int id,
+        ILogger log)
+        {
+            try
+            {
+                var json = await new StreamReader(req.Body).ReadToEndAsync();
+                var shoppingCart = JsonConvert.DeserializeObject<ShoppingCart>(json);
+
+                using (SqlConnection sqlConnection = new SqlConnection(CONNECTIONSTRING))
+                {
+                    await sqlConnection.OpenAsync();
+                    using (SqlCommand sqlCommand = new SqlCommand())
+                    {
+                        sqlCommand.Connection = sqlConnection;
+                        sqlCommand.CommandText = $"UPDATE ShoppingCart SET [count] = @count WHERE shopCartId = @id";
+                        sqlCommand.Parameters.AddWithValue("@id", id);
+                        sqlCommand.Parameters.AddWithValue("@count", shoppingCart.Count);
+
+                        await sqlCommand.ExecuteNonQueryAsync();
                     }
                 }
-                return new OkObjectResult(shoppingCartId + " is gedeleted");
+
+                return new OkObjectResult(shoppingCart);
+
             }
             catch (Exception ex)
             {
