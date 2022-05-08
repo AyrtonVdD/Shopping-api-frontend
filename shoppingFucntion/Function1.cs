@@ -160,7 +160,7 @@ namespace shoppingFucntion
                     using (SqlCommand sqlCommand = new SqlCommand())
                     {
                         sqlCommand.Connection = sqlConnection;
-                        sqlCommand.CommandText = "SELECT sc.shopCartId, s.id, s.name, p.prodId, p.prodName, p.prodImg, sc.count FROM ShoppingCart AS sc INNER JOIN Shops AS s ON sc.shopId = s.id INNER JOIN Producten AS p ON sc.prodId = p.prodId";
+                        sqlCommand.CommandText = "SELECT * FROM ShoppingCart";
 
                         var reader = await sqlCommand.ExecuteReaderAsync();
 
@@ -169,9 +169,12 @@ namespace shoppingFucntion
                             ShoppingCart shoppingCart = new ShoppingCart();
 
                             shoppingCart.ShopCartId = int.Parse(reader["shopCartId"].ToString());
-                            shoppingCart.ShopId = int.Parse(reader["id"].ToString());
+                            shoppingCart.ShopId = int.Parse(reader["shopId"].ToString());
                             shoppingCart.ProdId = int.Parse(reader["prodId"].ToString());
                             shoppingCart.Count = int.Parse(reader["Count"].ToString());
+                            shoppingCart.ShopName = reader["shopName"].ToString();
+                            shoppingCart.ProdName = reader["prodName"].ToString();
+                            shoppingCart.ProdImg =reader["prodImg"].ToString();
 
                             shoppingCarts.Add(shoppingCart);
                         }
@@ -288,10 +291,13 @@ namespace shoppingFucntion
                     using (SqlCommand sqlCommand = new SqlCommand())
                     {
                         sqlCommand.Connection = sqlConnection;
-                        sqlCommand.CommandText = "INSERT INTO ShoppingCart VALUES(@shopId,@prodId,@count)";
+                        sqlCommand.CommandText = "INSERT INTO ShoppingCart VALUES(@shopId,@prodId,@count,@shopName,@prodName,@prodImg)";
                         sqlCommand.Parameters.AddWithValue("@shopId", shoppingCart.ShopId);
                         sqlCommand.Parameters.AddWithValue("@prodId", shoppingCart.ProdId);
                         sqlCommand.Parameters.AddWithValue("@count", shoppingCart.Count);
+                        sqlCommand.Parameters.AddWithValue("@shopName", shoppingCart.ShopName);
+                        sqlCommand.Parameters.AddWithValue("@prodName", shoppingCart.ProdName);
+                        sqlCommand.Parameters.AddWithValue("@prodImg", shoppingCart.ProdImg);
 
                         await sqlCommand.ExecuteNonQueryAsync();
                     }
@@ -307,8 +313,8 @@ namespace shoppingFucntion
 
         [FunctionName("DelProdShoppingCart")]
         public async Task<IActionResult> DelRegistration(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "DELETE", Route = "v1/delProduct/{id}")] HttpRequest req,
-        string id,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "DELETE", Route = "v1/delProduct/{shoppingCartId}")] HttpRequest req,
+        int shoppingCartId,
         ILogger log)
         {
             try
@@ -319,11 +325,10 @@ namespace shoppingFucntion
                     using (SqlCommand sqlCommand = new SqlCommand())
                     {
                         sqlCommand.Connection = sqlConnection;
-                        sqlCommand.CommandText = "DELETE FROM ShoppingCart WHERE shopCartId=@id";
-                        sqlCommand.Parameters.AddWithValue("@id", id);
+                        sqlCommand.CommandText = "DELETE FROM ShoppingCart WHERE shopCartId='" + shoppingCartId + "''";
                     }
                 }
-                return new OkObjectResult(id + " is gedeleted");
+                return new OkObjectResult(shoppingCartId + " is gedeleted");
             }
             catch (Exception ex)
             {

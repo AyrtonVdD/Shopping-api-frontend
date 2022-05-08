@@ -19,5 +19,14 @@ namespace shoppingFucntion.Models
         [JsonProperty("count")]
         public int Count { get; set; }
 
+        [JsonProperty("shopName")]
+        public string ShopName { get; set; }
+
+        [JsonProperty("prodName")]
+        public string ProdName { get; set; }
+
+        [JsonProperty("prodImg")]
+        public string ProdImg { get; set; }
+
     }
 }
